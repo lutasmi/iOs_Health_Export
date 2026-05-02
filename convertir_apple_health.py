@@ -6,14 +6,14 @@ import pandas as pd
 
 
 # =========================
-# 1. CONFIGURACIÓN
+# 1. CONFIGURACIÓN '/Users/lm/Library/Mobile Documents/com~apple~CloudDocs/exportación.zip'
 # =========================
 
-RUTA_ENTRADA = Path(r"C:\Users\TU_USUARIO\Downloads\export.zip")
+RUTA_ENTRADA = Path("/Users/lm/Library/Mobile Documents/com~apple~CloudDocs/exportación.zip")
 # También puedes poner directamente:
 # RUTA_ENTRADA = Path(r"C:\Users\TU_USUARIO\Downloads\export.xml")
 
-CARPETA_SALIDA = Path(r"C:\Users\TU_USUARIO\Downloads\apple_health_tablas")
+CARPETA_SALIDA = Path("/Users/lm/Library/Mobile Documents/com~apple~CloudDocs/apple_health_tablas")
 
 ZONA_HORARIA = "Europe/Madrid"
 
@@ -48,12 +48,23 @@ def limpiar_tipo(tipo):
 def abrir_export_xml(ruta):
     if ruta.suffix.lower() == ".zip":
         zip_file = zipfile.ZipFile(ruta)
-        posibles = [n for n in zip_file.namelist() if n.endswith("export.xml")]
+
+        posibles = [
+            info for info in zip_file.infolist()
+            if info.filename.lower().endswith(".xml")
+            and "apple_health_export/" in info.filename
+        ]
 
         if not posibles:
-            raise FileNotFoundError("No se encontró export.xml dentro del ZIP.")
+            raise FileNotFoundError("No se encontró ningún XML de Apple Health dentro del ZIP.")
 
-        return zip_file.open(posibles[0]), zip_file
+        # Elegimos el XML más grande, que normalmente es el archivo principal de datos
+        archivo_principal = max(posibles, key=lambda x: x.file_size)
+
+        print(f"XML encontrado: {archivo_principal.filename}")
+        print(f"Tamaño aproximado: {archivo_principal.file_size / 1024 / 1024:.1f} MB")
+
+        return zip_file.open(archivo_principal.filename), zip_file
 
     return open(ruta, "rb"), None
 
